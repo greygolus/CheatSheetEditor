@@ -73,6 +73,7 @@ body.light-theme .modal input, body.light-theme .modal select, body.light-theme 
 /* ===== THE ACTUAL SHEET ===== */
 .page{
   width:8.5in;height:11in;padding:var(--page-margin, 0.12in);overflow:hidden;position:relative;color:#111;font-family:'Arial Narrow','Liberation Sans Narrow',sans-serif;
+  display:flex;flex-direction:column;
   --global-scale: 1.0;
   --fs-title: 6.2pt;
   --fs-body: 5.6pt;
@@ -89,12 +90,13 @@ body.light-theme .modal input, body.light-theme .modal select, body.light-theme 
 .page.a4 { width:8.27in; height:11.69in; }
 .page.a4.landscape { width:11.69in; height:8.27in; }
 
-.page .hdr { font-weight:bold; border-bottom:0.8pt solid #000; margin-bottom:2pt; padding-bottom:1pt; text-transform:uppercase; font-size:calc(6pt * var(--global-scale)); outline:none;}
+.page .hdr { font-weight:bold; border-bottom:0.8pt solid #000; margin-bottom:2pt; padding-bottom:1pt; text-transform:uppercase; font-size:calc(6pt * var(--global-scale)); outline:none; flex-shrink:0; }
 .page .cols {
   column-count: var(--page-cols, 3);
   column-gap: var(--page-gap, 10pt);
   column-rule: var(--page-rule, none);
-  height: calc(100% - 1.2em);
+  flex: 1;
+  min-height: 0;
   position: relative;
 }
 
