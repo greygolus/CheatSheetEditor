@@ -33,26 +33,104 @@ function renderAll() {
   checkFit();
 }
 
-function renderPage() {
-  const container = document.getElementById('columnsContainer');
+function createSectionHTML(s) {
+  return `
+    <div class="s" data-id="${s.id}" style="border-left:1.5pt solid ${s.color};">
+      <div class="section-controls">
+        <button onclick="moveSection(${s.id},-1)" title="Move up">▲</button>
+        <button onclick="moveSection(${s.id},1)" title="Move down">▼</button>
+        <button onclick="moveToOtherPage(${s.id})" title="Move to other page">⇋</button>
+        <button onclick="duplicateSection(${s.id})" title="Duplicate">⧉</button>
+        <button onclick="showImageModalFor(${s.id})" title="Add image">🖼</button>
+        <button onclick="deleteSection(${s.id})" title="Delete" style="color:#fca5a5;">✕</button>
+      </div>
+      <h2 style="background:${s.color}; cursor:pointer;" onclick="collapseSection(${s.id})" title="Click to collapse/expand">${s.title} ${s.collapsed ? '▼' : ''}</h2>
+      <div class="content" contenteditable="true" data-section-id="${s.id}" style="display:${s.collapsed ? 'none' : 'block'};">${s.content}</div>
+    </div>
+  `;
+}
+
+function renderMathInEl(el) {
+  try {
+    renderMathInElement(el, { delimiters: [{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}], throwOnError: false });
+  } catch(e) {}
+}
+
+function recalculatePages(testMode = false) {
+  const pagesCount = parseInt(document.getElementById('pagesSelect').value);
+  const container1 = document.getElementById('columnsContainer');
   const container2 = document.getElementById('columnsContainer2');
-  const fontSize = document.getElementById('fontSlider').value;
+  const p1 = document.getElementById('page');
+  const p2 = document.getElementById('page2');
+  
+  if (pagesCount === 1) {
+    let html = '';
+    sections.forEach(s => {
+      if (!testMode) s.page = 1;
+      html += createSectionHTML(s);
+    });
+    container1.innerHTML = html;
+    renderMathInEl(container1);
+    return (p1.scrollWidth > p1.clientWidth + 2 || p1.scrollHeight > p1.clientHeight + 2);
+  } else {
+    container1.innerHTML = '';
+    if(container2) container2.innerHTML = '';
+    let tPage = 1;
+    let overflowed = false;
+    for (const s of sections) {
+      const html = createSectionHTML(s);
+      if (tPage === 1) {
+        container1.insertAdjacentHTML('beforeend', html);
+        renderMathInEl(container1.lastElementChild);
+        if (p1.scrollWidth > p1.clientWidth + 2 || p1.scrollHeight > p1.clientHeight + 2) {
+          container1.lastElementChild.remove();
+          tPage = 2;
+          if (!testMode) s.page = 2;
+          container2.insertAdjacentHTML('beforeend', html);
+          renderMathInEl(container2.lastElementChild);
+        } else {
+          if (!testMode) s.page = 1;
+        }
+      } else {
+        container2.insertAdjacentHTML('beforeend', html);
+        if (!testMode) s.page = 2;
+        renderMathInEl(container2.lastElementChild);
+        if (p2.scrollWidth > p2.clientWidth + 2 || p2.scrollHeight > p2.clientHeight + 2) {
+          overflowed = true;
+        }
+      }
+    }
+    return overflowed;
+  }
+}
+
+function attachBlurListeners() {
+  document.querySelectorAll('.content[contenteditable]').forEach(el => {
+    el.addEventListener('blur', function() {
+      const id = parseInt(this.dataset.sectionId);
+      const sec = sections.find(s => s.id === id);
+      if (sec) sec.content = this.innerHTML;
+    });
+  });
+}
+
+function renderPage() {
   const lineHeight = document.getElementById('lineSlider').value;
   const cols = document.getElementById('colSelect').value;
   const gap = document.getElementById('gapSlider').value;
-
   const orientation = document.getElementById('orientationSelect').value;
   const size = document.getElementById('paperSizeSelect').value;
   const pages = parseInt(document.getElementById('pagesSelect').value);
   const margin = document.getElementById('marginSlider').value;
   const ruleChecked = document.getElementById('ruleCheckbox').checked;
   const ruleColor = document.getElementById('ruleColor').value;
+  const globalScale = document.getElementById('globalScale').value;
+  const fontVars = ['fsTitle', 'fsBody', 'fsFormula', 'fsBold', 'fsAnnot', 'fsWarn', 'fsTip', 'fsTable', 'fsConst'];
 
   const page1 = document.getElementById('page');
   const page2 = document.getElementById('page2');
   const page2Shadow = document.getElementById('page2Shadow');
 
-  // Apply layout classes and vars
   [page1, page2].forEach(p => {
     if (!p) return;
     p.className = `page ${orientation} ${size === 'a4' ? 'a4' : ''}`;
@@ -60,45 +138,25 @@ function renderPage() {
     p.style.setProperty('--page-cols', cols);
     p.style.setProperty('--page-gap', `${gap}pt`);
     p.style.setProperty('--page-rule', ruleChecked ? `0.4pt solid ${ruleColor}` : 'none');
-    p.style.fontSize = fontSize + 'pt';
+    p.style.setProperty('--global-scale', globalScale);
+    fontVars.forEach(id => p.style.setProperty(`--${id.replace(/([A-Z])/g, '-$1').toLowerCase()}`, document.getElementById(id).value + 'pt'));
     p.style.lineHeight = lineHeight;
   });
 
   if (page2Shadow) page2Shadow.style.display = pages === 2 ? 'block' : 'none';
 
-  let html1 = '';
-  let html2 = '';
+  const container1 = document.getElementById('columnsContainer');
+  const container2 = document.getElementById('columnsContainer2');
   
+  let html1 = ''; let html2 = '';
   sections.forEach(s => {
-    const sHTML = `
-      <div class="s" data-id="${s.id}" style="border-left:1.5pt solid ${s.color};">
-        <div class="section-controls">
-          <button onclick="moveSection(${s.id},-1)" title="Move up">▲</button>
-          <button onclick="moveSection(${s.id},1)" title="Move down">▼</button>
-          <button onclick="moveToOtherPage(${s.id})" title="Move to other page">⇋</button>
-          <button onclick="showImageModalFor(${s.id})" title="Add image">🖼</button>
-          <button onclick="deleteSection(${s.id})" title="Delete" style="color:#fca5a5;">✕</button>
-        </div>
-        <h2 style="background:${s.color};font-size:${Math.max(parseFloat(fontSize)-0.2, 4)}pt;">${s.title}</h2>
-        <div class="content" contenteditable="true" data-section-id="${s.id}">${s.content}</div>
-      </div>
-    `;
-    if (s.page === 2) html2 += sHTML;
-    else html1 += sHTML;
+    if (s.page === 2) html2 += createSectionHTML(s);
+    else html1 += createSectionHTML(s);
   });
+  container1.innerHTML = html1;
+  if(container2) container2.innerHTML = html2;
 
-  container.innerHTML = html1;
-  if (container2) container2.innerHTML = html2;
-
-  // Save edits back to state on blur
-  container.querySelectorAll('.content[contenteditable]').forEach(el => {
-    el.addEventListener('blur', function() {
-      const id = parseInt(this.dataset.sectionId);
-      const sec = sections.find(s => s.id === id);
-      if (sec) sec.content = this.innerHTML;
-    });
-  });
-
+  attachBlurListeners();
   reRenderMath();
 }
 
@@ -110,6 +168,7 @@ function renderSectionList() {
       <div class="dot" style="background:${s.color};"></div>
       <div class="name">${s.title}</div>
       <div class="btns">
+        <button onclick="collapseSection(${s.id})" title="Collapse/Expand">${s.collapsed ? '◧' : '◨'}</button>
         <button onclick="moveSection(${s.id},-1)">▲</button>
         <button onclick="moveSection(${s.id},1)">▼</button>
         <button onclick="deleteSection(${s.id})" style="color:#fca5a5;">✕</button>
@@ -159,6 +218,36 @@ function moveToOtherPage(id) {
     if (sec.page === 2) document.getElementById('pagesSelect').value = '2';
     renderAll();
   }
+}
+
+function collapseSection(id) {
+  const sec = sections.find(s => s.id === id);
+  if (sec) {
+    sec.collapsed = !sec.collapsed;
+    renderAll();
+  }
+}
+
+function duplicateSection(id) {
+  const sec = sections.find(s => s.id === id);
+  if (sec) {
+    const idx = sections.findIndex(s => s.id === id);
+    const newSec = JSON.parse(JSON.stringify(sec));
+    newSec.id = sectionIdCounter++;
+    newSec.title += ' (copy)';
+    sections.splice(idx + 1, 0, newSec);
+    renderAll();
+  }
+}
+
+function applyTemplateToModal() {
+  const t = document.getElementById('newSectionTemplate').value;
+  const c = document.getElementById('newSectionContent');
+  if (t === 'none') c.value = '';
+  if (t === 'formula') c.value = '<div class="fb"><b>Formula Name:</b> $...$</div>\\n<p>Explain variables here...</p>';
+  if (t === 'procedure') c.value = '<p><b>Step 1:</b> ...</p>\\n<p><b>Step 2:</b> ...</p>';
+  if (t === 'table') c.value = '<table border="1">\\n<tr><td>Var</td><td>Val</td></tr>\\n<tr><td>...</td><td>...</td></tr>\\n</table>';
+  if (t === 'diagram') c.value = '<svg width="100" height="50" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">\\n  <rect width="100" height="50" fill="#f1f5f9"/>\\n  <text x="50" y="25" text-anchor="middle" font-size="10" fill="#64748b">Diagram</text>\\n</svg>';
 }
 
 // ===== DRAG & DROP =====
@@ -215,104 +304,122 @@ function addImageToSection() {
   closeModal('addImageModal');
 }
 
+// ===== TEXT FORMATTING =====
+function formatText(command, value = null) {
+  document.execCommand(command, false, value);
+}
+
+function insertTemplate(type) {
+  let html = '';
+  if (type === 'formula') html = '<div class="fb"><b>Formula Name:</b> $...$</div><br>';
+  else if (type === 'tip') html = '<div class="tip"><b>Tip:</b> ...</div><br>';
+  else if (type === 'warning') html = '<div class="w">⚠ <b>Warning:</b> ...</div><br>';
+  else if (type === 'example') html = '<div style="border:1.5pt solid #cbd5e1; padding:2pt; background:#f8fafc; margin:2pt 0; border-radius:1.5pt;"><b>Example:</b> ...</div><br>';
+  else if (type === 'table') html = '<table><tr><td>Header 1</td><td>Header 2</td></tr><tr><td>Cell 1</td><td>Cell 2</td></tr></table><br>';
+  document.execCommand('insertHTML', false, html);
+}
+
 // ===== AUTO-FIT =====
 function autoFitPage() {
-  const page = document.getElementById('page');
-  const maxH = 11 * 96 - 0.24 * 96; // 11in minus margins in px
-
-  // Step 1: Find the LARGEST font size that fits
-  let lo = 4.0, hi = 8.5, bestFont = 4.0;
-  page.style.lineHeight = '1.06';
-  for (let i = 0; i < 25; i++) {
+  const p1 = document.getElementById('page');
+  const p2 = document.getElementById('page2');
+  
+  let lo = 0.5, hi = 2.0, bestScale = 0.5;
+  p1.style.lineHeight = '1.06';
+  if (p2) p2.style.lineHeight = '1.06';
+  
+  for (let i = 0; i < 15; i++) {
     const mid = (lo + hi) / 2;
-    page.style.fontSize = mid + 'pt';
-    reRenderMathSync();
-    if (page.scrollHeight <= maxH) { bestFont = mid; lo = mid; }
+    p1.style.setProperty('--global-scale', mid);
+    if (p2) p2.style.setProperty('--global-scale', mid);
+    
+    const overflow = recalculatePages(true);
+    if (!overflow) { bestScale = mid; lo = mid; }
     else { hi = mid; }
   }
-  bestFont = Math.floor(bestFont * 10) / 10;
-  page.style.fontSize = bestFont + 'pt';
-  document.getElementById('fontSlider').value = bestFont;
-  document.getElementById('fontVal').textContent = bestFont + 'pt';
-
-  // Step 2: Grow line height to fill remaining vertical space
-  lo = 1.0; hi = 1.5; let bestLine = 1.0;
-  for (let i = 0; i < 20; i++) {
+  
+  bestScale = Math.floor(bestScale * 100) / 100;
+  p1.style.setProperty('--global-scale', bestScale);
+  if (p2) p2.style.setProperty('--global-scale', bestScale);
+  document.getElementById('globalScale').value = bestScale;
+  document.getElementById('globalScaleVal').textContent = bestScale.toFixed(2);
+  
+  lo = 1.0; hi = 1.6; let bestLine = 1.0;
+  for (let i = 0; i < 12; i++) {
     const mid = (lo + hi) / 2;
-    page.style.lineHeight = mid;
-    if (page.scrollHeight <= maxH) { bestLine = mid; lo = mid; }
+    p1.style.lineHeight = mid;
+    if (p2) p2.style.lineHeight = mid;
+    const overflow = recalculatePages(true);
+    if (!overflow) { bestLine = mid; lo = mid; }
     else { hi = mid; }
   }
+  
   bestLine = Math.floor(bestLine * 100) / 100;
-  page.style.lineHeight = bestLine;
+  p1.style.lineHeight = bestLine;
+  if (p2) p2.style.lineHeight = bestLine;
   document.getElementById('lineSlider').value = bestLine;
   document.getElementById('lineVal').textContent = bestLine;
-
-  // Step 3: Try bumping font up one more notch with the new line height
-  let tryFont = bestFont + 0.1;
-  page.style.fontSize = tryFont + 'pt';
-  reRenderMathSync();
-  if (page.scrollHeight <= maxH) {
-    bestFont = tryFont;
-    document.getElementById('fontSlider').value = bestFont;
-    document.getElementById('fontVal').textContent = bestFont + 'pt';
-    // Re-optimize line height
-    lo = bestLine; hi = 1.5; bestLine = lo;
-    for (let i = 0; i < 15; i++) {
-      const mid = (lo + hi) / 2;
-      page.style.lineHeight = mid;
-      if (page.scrollHeight <= maxH) { bestLine = mid; lo = mid; }
-      else { hi = mid; }
-    }
-    bestLine = Math.floor(bestLine * 100) / 100;
-    page.style.lineHeight = bestLine;
-    document.getElementById('lineSlider').value = bestLine;
-    document.getElementById('lineVal').textContent = bestLine;
-  } else {
-    page.style.fontSize = bestFont + 'pt';
-  }
-
-  reRenderMath();
+  
+  recalculatePages(false);
+  attachBlurListeners();
   checkFit();
 }
 
 function checkFit() {
-  const page = document.getElementById('page');
-  const maxH = 11 * 96 - 0.24 * 96;
-  const indicator = document.getElementById('fitIndicator');
-  if (page.scrollHeight <= maxH + 2) {
-    indicator.className = 'fit-indicator fit-ok';
-    indicator.textContent = '✓ Fits on 1 page';
+  const p1 = document.getElementById('page');
+  const p2 = document.getElementById('page2');
+  const pages = parseInt(document.getElementById('pagesSelect').value);
+  const ind = document.getElementById('fitIndicator');
+  
+  const o1 = (p1.scrollWidth > p1.clientWidth + 2 || p1.scrollHeight > p1.clientHeight + 2);
+  const o2 = pages === 2 && p2 && (p2.scrollWidth > p2.clientWidth + 2 || p2.scrollHeight > p2.clientHeight + 2);
+  
+  if (o1 || o2) {
+    ind.className = 'fit-indicator fit-over';
+    ind.textContent = '✕ Overflows!';
   } else {
-    indicator.className = 'fit-indicator fit-over';
-    indicator.textContent = '✕ Overflows! (' + Math.round(page.scrollHeight - maxH) + 'px over)';
+    ind.className = 'fit-indicator fit-ok';
+    ind.textContent = pages === 2 ? '✓ Fits on 2 pages' : '✓ Fits on 1 page';
   }
 }
 
 // ===== MATH RENDERING =====
 function reRenderMath() {
-  try {
-    renderMathInElement(document.getElementById('page'), {
-      delimiters: [{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],
-      throwOnError: false
-    });
-  } catch(e) { console.warn('Math render error:', e); }
+  renderMathInEl(document.getElementById('page'));
+  const p2 = document.getElementById('page2');
+  if (p2) renderMathInEl(p2);
   setTimeout(checkFit, 100);
 }
 function reRenderMathSync() {
-  try {
-    renderMathInElement(document.getElementById('page'), {
-      delimiters: [{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],
-      throwOnError: false
-    });
-  } catch(e) {}
+  renderMathInEl(document.getElementById('page'));
+  const p2 = document.getElementById('page2');
+  if (p2) renderMathInEl(p2);
 }
 
 // ===== SLIDER LISTENERS =====
-document.getElementById('fontSlider').addEventListener('input', function() {
-  document.getElementById('fontVal').textContent = this.value + 'pt';
+const TYPO_DEFAULTS = { globalScale:1.0, fsTitle:6.2, fsBody:5.6, fsFormula:5.6, fsBold:5.6, fsAnnot:4.9, fsWarn:5.1, fsTip:5.2, fsTable:5.3, fsConst:5.3 };
+
+document.getElementById('globalScale').addEventListener('input', function() {
+  document.getElementById('globalScaleVal').textContent = parseFloat(this.value).toFixed(2);
   renderPage(); checkFit();
 });
+
+['fsTitle', 'fsBody', 'fsFormula', 'fsBold', 'fsAnnot', 'fsWarn', 'fsTip', 'fsTable', 'fsConst'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function() {
+    document.getElementById(id + 'Val').textContent = this.value + 'pt';
+    renderPage(); checkFit();
+  });
+});
+
+function resetTypography() {
+  for (const [key, val] of Object.entries(TYPO_DEFAULTS)) {
+    document.getElementById(key).value = val;
+    const valText = key === 'globalScale' ? val.toFixed(2) : val + 'pt';
+    document.getElementById(key + 'Val').textContent = valText;
+  }
+  renderPage(); checkFit();
+}
+
 document.getElementById('lineSlider').addEventListener('input', function() {
   document.getElementById('lineVal').textContent = this.value;
   renderPage(); checkFit();
@@ -332,18 +439,32 @@ document.getElementById('marginSlider').addEventListener('input', function() {
 document.getElementById('ruleCheckbox').addEventListener('change', function() { renderPage(); });
 document.getElementById('ruleColor').addEventListener('input', function() { renderPage(); });
 
-// ===== IMPORT / EXPORT =====
-function exportJSON() {
-  // Sync content from DOM
+// ===== STATE MANAGEMENT & HISTORY =====
+let historyStack = [];
+let historyIndex = -1;
+
+function flushDOMToState() {
   document.querySelectorAll('.content[contenteditable]').forEach(el => {
     const id = parseInt(el.dataset.sectionId);
     const sec = sections.find(s => s.id === id);
     if (sec) sec.content = el.innerHTML;
   });
+}
 
-  const data = {
+function getStateObj() {
+  flushDOMToState();
+  return {
     header: document.getElementById('pageHeader').innerHTML,
-    fontSize: document.getElementById('fontSlider').value,
+    globalScale: document.getElementById('globalScale').value,
+    fsTitle: document.getElementById('fsTitle').value,
+    fsBody: document.getElementById('fsBody').value,
+    fsFormula: document.getElementById('fsFormula').value,
+    fsBold: document.getElementById('fsBold').value,
+    fsAnnot: document.getElementById('fsAnnot').value,
+    fsWarn: document.getElementById('fsWarn').value,
+    fsTip: document.getElementById('fsTip').value,
+    fsTable: document.getElementById('fsTable').value,
+    fsConst: document.getElementById('fsConst').value,
     lineHeight: document.getElementById('lineSlider').value,
     columns: document.getElementById('colSelect').value,
     gap: document.getElementById('gapSlider').value,
@@ -355,6 +476,59 @@ function exportJSON() {
     ruleColor: document.getElementById('ruleColor').value,
     sections: sections
   };
+}
+
+function loadStateObj(data) {
+  if (data.header) document.getElementById('pageHeader').innerHTML = data.header;
+  const typeKeys = ['globalScale', 'fsTitle', 'fsBody', 'fsFormula', 'fsBold', 'fsAnnot', 'fsWarn', 'fsTip', 'fsTable', 'fsConst'];
+  typeKeys.forEach(k => {
+    if (data[k]) {
+      document.getElementById(k).value = data[k];
+      document.getElementById(k + 'Val').textContent = k === 'globalScale' ? parseFloat(data[k]).toFixed(2) : data[k] + 'pt';
+    }
+  });
+  if (data.lineHeight) { document.getElementById('lineSlider').value = data.lineHeight; document.getElementById('lineVal').textContent = data.lineHeight; }
+  if (data.columns) document.getElementById('colSelect').value = data.columns;
+  if (data.gap) { document.getElementById('gapSlider').value = data.gap; document.getElementById('gapVal').textContent = data.gap+'pt'; }
+  if (data.pages) document.getElementById('pagesSelect').value = data.pages;
+  if (data.paperSize) document.getElementById('paperSizeSelect').value = data.paperSize;
+  if (data.orientation) document.getElementById('orientationSelect').value = data.orientation;
+  if (data.margin) { document.getElementById('marginSlider').value = data.margin; document.getElementById('marginVal').textContent = data.margin+'in'; }
+  if (data.ruleChecked !== undefined) document.getElementById('ruleCheckbox').checked = data.ruleChecked;
+  if (data.ruleColor) document.getElementById('ruleColor').value = data.ruleColor;
+  if (data.sections) {
+    sections = data.sections;
+    sectionIdCounter = sections.length ? Math.max(...sections.map(s => s.id)) + 1 : 0;
+  }
+}
+
+function saveStateToHistory() {
+  const stateStr = JSON.stringify(getStateObj());
+  if (historyIndex >= 0 && historyStack[historyIndex] === stateStr) return;
+  historyStack = historyStack.slice(0, historyIndex + 1);
+  historyStack.push(stateStr);
+  if (historyStack.length > 50) { historyStack.shift(); } else { historyIndex++; }
+}
+
+function undo() {
+  if (historyIndex > 0) {
+    historyIndex--;
+    loadStateObj(JSON.parse(historyStack[historyIndex]));
+    renderAll();
+  }
+}
+
+function redo() {
+  if (historyIndex < historyStack.length - 1) {
+    historyIndex++;
+    loadStateObj(JSON.parse(historyStack[historyIndex]));
+    renderAll();
+  }
+}
+
+// ===== IMPORT / EXPORT =====
+function exportJSON() {
+  const data = getStateObj();
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -368,25 +542,9 @@ function importJSON(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const data = JSON.parse(e.target.result);
-      if (data.header) document.getElementById('pageHeader').innerHTML = data.header;
-      if (data.fontSize) { document.getElementById('fontSlider').value = data.fontSize; document.getElementById('fontVal').textContent = data.fontSize+'pt'; }
-      if (data.lineHeight) { document.getElementById('lineSlider').value = data.lineHeight; document.getElementById('lineVal').textContent = data.lineHeight; }
-      if (data.columns) document.getElementById('colSelect').value = data.columns;
-      if (data.gap) { document.getElementById('gapSlider').value = data.gap; document.getElementById('gapVal').textContent = data.gap+'pt'; }
-      
-      if (data.pages) document.getElementById('pagesSelect').value = data.pages;
-      if (data.paperSize) document.getElementById('paperSizeSelect').value = data.paperSize;
-      if (data.orientation) document.getElementById('orientationSelect').value = data.orientation;
-      if (data.margin) { document.getElementById('marginSlider').value = data.margin; document.getElementById('marginVal').textContent = data.margin+'in'; }
-      if (data.ruleChecked !== undefined) document.getElementById('ruleCheckbox').checked = data.ruleChecked;
-      if (data.ruleColor) document.getElementById('ruleColor').value = data.ruleColor;
-
-      if (data.sections) {
-        sections = data.sections;
-        sectionIdCounter = Math.max(...sections.map(s=>s.id)) + 1;
-      }
+      loadStateObj(JSON.parse(e.target.result));
       renderAll();
+      saveStateToHistory();
     } catch(err) { alert('Error loading file: ' + err.message); }
   };
   reader.readAsText(file);
@@ -395,5 +553,121 @@ function importJSON(event) {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// ===== INIT =====
-initSections();
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey) {
+    const k = e.key.toLowerCase();
+    if (k === 'b') { e.preventDefault(); formatText('bold'); }
+    if (k === 'i') { e.preventDefault(); formatText('italic'); }
+    if (k === 'u') { e.preventDefault(); formatText('underline'); }
+    if (k === 's') { e.preventDefault(); exportJSON(); }
+    if (k === 'p') { e.preventDefault(); window.print(); }
+    if (k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+    if (k === 'y') { e.preventDefault(); redo(); }
+  }
+});
+
+// ===== UI ZOOM =====
+document.getElementById('zoomSlider').addEventListener('input', function() {
+  document.getElementById('zoomVal').textContent = Math.round(this.value * 100) + '%';
+  document.getElementById('pagesWrapper').style.transform = `scale(${this.value})`;
+});
+
+// ===== INIT & AUTO-SAVE =====
+const saved = localStorage.getItem('cheatsheet_autosave');
+if (saved) {
+  try {
+    loadStateObj(JSON.parse(saved));
+    renderAll();
+  } catch(e) { initSections(); }
+} else {
+  initSections();
+}
+saveStateToHistory(); // Initial state
+
+setInterval(() => {
+  saveStateToHistory();
+}, 5000);
+
+setInterval(() => {
+  if (sections.length > 0) {
+    localStorage.setItem('cheatsheet_autosave', JSON.stringify(getStateObj()));
+  }
+}, 30000);
+
+// ===== FLOATING IMAGE CONTROLS =====
+let selectedImage = null;
+
+document.addEventListener('click', function(e) {
+  if (e.target.tagName === 'IMG' && e.target.closest('.content')) {
+    selectImage(e.target);
+  } else if (!e.target.closest('#imageToolbar')) {
+    deselectImage();
+  }
+});
+
+function selectImage(img) {
+  if (selectedImage) selectedImage.classList.remove('img-selected');
+  selectedImage = img;
+  img.classList.add('img-selected');
+  const toolbar = document.getElementById('imageToolbar');
+  toolbar.style.display = 'flex';
+  const rect = img.getBoundingClientRect();
+  toolbar.style.top = (window.scrollY + rect.top - 40) + 'px';
+  toolbar.style.left = (window.scrollX + Math.max(0, rect.left)) + 'px';
+  document.getElementById('floatImgWidth').value = parseInt(img.style.maxWidth || 100);
+}
+
+function deselectImage() {
+  if (selectedImage) {
+    selectedImage.classList.remove('img-selected');
+    selectedImage = null;
+  }
+  document.getElementById('imageToolbar').style.display = 'none';
+}
+
+document.getElementById('floatImgWidth').addEventListener('input', function() {
+  if (selectedImage) selectedImage.style.maxWidth = this.value + '%';
+});
+
+function alignImage(align) {
+  if (selectedImage) {
+    if (align === 'center') {
+      selectedImage.style.display = 'block';
+      selectedImage.style.margin = '1pt auto';
+      selectedImage.style.float = 'none';
+    } else {
+      selectedImage.style.display = 'inline-block';
+      selectedImage.style.float = align;
+      selectedImage.style.margin = align === 'left' ? '1pt 4pt 1pt 0' : '1pt 0 1pt 4pt';
+    }
+  }
+}
+
+function deleteImage() {
+  if (selectedImage) {
+    selectedImage.remove();
+    deselectImage();
+  }
+}
+
+document.addEventListener('paste', function(e) {
+  const contentEl = e.target.closest('.content');
+  if (!contentEl) return;
+  const items = e.clipboardData.items;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      e.preventDefault();
+      const file = items[i].getAsFile();
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.execCommand('insertImage', false, evt.target.result);
+        const images = contentEl.getElementsByTagName('img');
+        const newImg = images[images.length - 1];
+        if (newImg) newImg.style.maxWidth = '100%';
+      };
+      reader.readAsDataURL(file);
+      break;
+    }
+  }
+});
