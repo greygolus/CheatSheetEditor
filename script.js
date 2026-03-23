@@ -58,47 +58,56 @@ function renderMathInEl(el) {
 
 function recalculatePages(testMode = false) {
   const pagesCount = parseInt(document.getElementById('pagesSelect').value);
-  const container1 = document.getElementById('columnsContainer');
-  const container2 = document.getElementById('columnsContainer2');
+  const c1 = document.getElementById('columnsContainer');
+  const c2 = document.getElementById('columnsContainer2');
   const p1 = document.getElementById('page');
   const p2 = document.getElementById('page2');
   
+  // Gather direct DOM nodes
+  const nodes = [];
+  Array.from(c1.children).forEach(n => { if (n.classList.contains('s')) nodes.push(n); });
+  if (c2) {
+    Array.from(c2.children).forEach(n => { if (n.classList.contains('s')) nodes.push(n); });
+  }
+  
+  c1.innerHTML = '';
+  if (c2) c2.innerHTML = '';
+  
   if (pagesCount === 1) {
-    let html = '';
-    sections.forEach(s => {
-      if (!testMode) s.page = 1;
-      html += createSectionHTML(s);
-    });
-    container1.innerHTML = html;
-    renderMathInEl(container1);
+    nodes.forEach(n => c1.appendChild(n));
+    if (!testMode) {
+      nodes.forEach(n => {
+        const s = sections.find(x => x.id === parseInt(n.dataset.id));
+        if (s) s.page = 1;
+      });
+    }
     return (p1.scrollWidth > p1.clientWidth + 100 || p1.scrollHeight > p1.clientHeight + 2);
   } else {
-    container1.innerHTML = '';
-    if(container2) container2.innerHTML = '';
     let tPage = 1;
-    let overflowed = false;
-    for (const s of sections) {
-      const html = createSectionHTML(s);
+    for (const node of nodes) {
       if (tPage === 1) {
-        container1.insertAdjacentHTML('beforeend', html);
-        renderMathInEl(container1.lastElementChild);
+        c1.appendChild(node);
         if (p1.scrollWidth > p1.clientWidth + 100 || p1.scrollHeight > p1.clientHeight + 2) {
-          container1.lastElementChild.remove();
+          c1.removeChild(node);
           tPage = 2;
-          if (!testMode) s.page = 2;
-          container2.insertAdjacentHTML('beforeend', html);
-          renderMathInEl(container2.lastElementChild);
-        } else {
-          if (!testMode) s.page = 1;
+          c2.appendChild(node);
         }
       } else {
-        container2.insertAdjacentHTML('beforeend', html);
-        if (!testMode) s.page = 2;
-        renderMathInEl(container2.lastElementChild);
-        if (p2.scrollWidth > p2.clientWidth + 100 || p2.scrollHeight > p2.clientHeight + 2) {
-          overflowed = true;
-        }
+        c2.appendChild(node);
       }
+    }
+    
+    const overflowed = (p2.scrollWidth > p2.clientWidth + 100 || p2.scrollHeight > p2.clientHeight + 2);
+    
+    if (!testMode) {
+      Array.from(c1.children).forEach(n => {
+        const s = sections.find(x => x.id === parseInt(n.dataset.id));
+        if (s) s.page = 1;
+      });
+      Array.from(c2.children).forEach(n => {
+        const s = sections.find(x => x.id === parseInt(n.dataset.id));
+        if (s) s.page = 2;
+      });
     }
     return overflowed;
   }
@@ -247,7 +256,7 @@ function applyTemplateToModal() {
   if (t === 'formula') c.value = '<div class="fb"><b>Formula Name:</b> $...$</div>\\n<p>Explain variables here...</p>';
   if (t === 'procedure') c.value = '<p><b>Step 1:</b> ...</p>\\n<p><b>Step 2:</b> ...</p>';
   if (t === 'table') c.value = '<table border="1">\\n<tr><td>Var</td><td>Val</td></tr>\\n<tr><td>...</td><td>...</td></tr>\\n</table>';
-  if (t === 'diagram') c.value = '<svg width="100" height="50" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">\\n  <rect width="100" height="50" fill="#f1f5f9"/>\\n  <text x="50" y="25" text-anchor="middle" font-size="10" fill="#64748b">Diagram</text>\\n</svg>';
+  if (t === 'diagram') c.value = '<svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">\\n  <rect width="200" height="150" fill="#f1f5f9"/>\\n  <text x="100" y="75" text-anchor="middle" font-size="14" fill="#64748b">Diagram</text>\\n</svg>';
 }
 
 // ===== DRAG & DROP =====
@@ -327,49 +336,49 @@ function autoFitPage() {
   p1.style.lineHeight = '1.06';
   if (p2) p2.style.lineHeight = '1.06';
   
-  let scale = 0.5;
-  while (scale <= 2.0) {
-    p1.style.setProperty('--global-scale', scale);
-    if (p2) p2.style.setProperty('--global-scale', scale);
+  let lo = 0.5, hi = 2.0, bestScale = 0.5;
+  while (lo <= hi) {
+    const mid = Math.round(((lo + hi) / 2) * 100) / 100;
+    p1.style.setProperty('--global-scale', mid);
+    if (p2) p2.style.setProperty('--global-scale', mid);
     
-    const overflow = recalculatePages(true);
-    if (overflow) {
-      scale = Math.round((scale - 0.01) * 100) / 100; // Move back 1 step
-      break;
+    if (!recalculatePages(true)) {
+      bestScale = mid;
+      if (lo === mid) break;
+      lo = Math.round((mid + 0.01) * 100) / 100;
+    } else {
+      if (hi === mid) break;
+      hi = Math.round((mid - 0.01) * 100) / 100;
     }
-    scale = Math.round((scale + 0.01) * 100) / 100;
   }
-  if (scale > 2.0) scale = 2.0;
-  if (scale < 0.5) scale = 0.5;
   
-  let bestScale = scale;
   p1.style.setProperty('--global-scale', bestScale);
   if (p2) p2.style.setProperty('--global-scale', bestScale);
   document.getElementById('globalScale').value = bestScale;
   document.getElementById('globalScaleVal').textContent = bestScale.toFixed(2);
   
-  let line = 1.0;
-  while (line <= 1.6) {
-    p1.style.lineHeight = line;
-    if (p2) p2.style.lineHeight = line;
-    const overflow = recalculatePages(true);
-    if (overflow) {
-      line = Math.round((line - 0.01) * 100) / 100; // Move back 1 step
-      break;
+  lo = 1.0; hi = 1.6; let bestLine = 1.0;
+  while (lo <= hi) {
+    const mid = Math.round(((lo + hi) / 2) * 100) / 100;
+    p1.style.lineHeight = mid;
+    if (p2) p2.style.lineHeight = mid;
+    
+    if (!recalculatePages(true)) {
+      bestLine = mid;
+      if (lo === mid) break;
+      lo = Math.round((mid + 0.01) * 100) / 100;
+    } else {
+      if (hi === mid) break;
+      hi = Math.round((mid - 0.01) * 100) / 100;
     }
-    line = Math.round((line + 0.01) * 100) / 100;
   }
-  if (line > 1.6) line = 1.6;
-  if (line < 1.0) line = 1.0;
   
-  let bestLine = line;
   p1.style.lineHeight = bestLine;
   if (p2) p2.style.lineHeight = bestLine;
   document.getElementById('lineSlider').value = bestLine;
   document.getElementById('lineVal').textContent = bestLine;
   
   recalculatePages(false);
-  attachBlurListeners();
   checkFit();
 }
 
@@ -405,7 +414,7 @@ function reRenderMathSync() {
 }
 
 // ===== SLIDER LISTENERS =====
-const TYPO_DEFAULTS = { globalScale:1.0, fsTitle:6.2, fsBody:5.6, fsFormula:5.6, fsBold:5.6, fsAnnot:4.9, fsWarn:5.1, fsTip:5.2, fsTable:5.3, fsConst:5.3 };
+const TYPO_DEFAULTS = { globalScale:1.0, fsTitle:7.0, fsBody:5.5, fsFormula:6.0, fsBold:5.8, fsAnnot:4.8, fsWarn:5.5, fsTip:5.5, fsTable:5.0, fsConst:5.0 };
 
 document.getElementById('globalScale').addEventListener('input', function() {
   document.getElementById('globalScaleVal').textContent = parseFloat(this.value).toFixed(2);
