@@ -135,15 +135,20 @@ function renderPage() {
   const ruleChecked = document.getElementById('ruleCheckbox').checked;
   const ruleColor = document.getElementById('ruleColor').value;
   const globalScale = document.getElementById('globalScale').value;
+  const smartBreaks = document.getElementById('smartBreaksCheck').checked;
+  const showHeader = document.getElementById('showHeaderCheck').checked;
   const fontVars = ['fsTitle', 'fsBody', 'fsFormula', 'fsBold', 'fsAnnot', 'fsWarn', 'fsTip', 'fsTable', 'fsConst'];
 
   const page1 = document.getElementById('page');
   const page2 = document.getElementById('page2');
   const page2Shadow = document.getElementById('page2Shadow');
 
+  const hdr = document.getElementById('pageHeader');
+  if (hdr) hdr.style.display = showHeader ? 'block' : 'none';
+
   [page1, page2].forEach(p => {
     if (!p) return;
-    p.className = `page ${orientation} ${size === 'a4' ? 'a4' : ''} ${theme === 'bw' ? 'theme-bw' : ''}`;
+    p.className = `page ${orientation} ${size === 'a4' ? 'a4' : ''} ${theme === 'bw' ? 'theme-bw' : ''} ${smartBreaks ? 'smart-breaks' : ''}`;
     p.style.setProperty('--page-margin', `${margin}in`);
     p.style.setProperty('--page-cols', cols);
     p.style.setProperty('--page-gap', `${gap}pt`);
@@ -452,6 +457,8 @@ document.getElementById('pagesSelect').addEventListener('change', function() { r
 document.getElementById('paperSizeSelect').addEventListener('change', function() { renderPage(); checkFit(); });
 document.getElementById('orientationSelect').addEventListener('change', function() { renderPage(); checkFit(); });
 document.getElementById('themeSelect').addEventListener('change', function() { renderPage(); checkFit(); });
+document.getElementById('smartBreaksCheck').addEventListener('change', function() { renderPage(); checkFit(); });
+document.getElementById('showHeaderCheck').addEventListener('change', function() { renderPage(); checkFit(); });
 document.getElementById('marginSlider').addEventListener('input', function() {
   document.getElementById('marginVal').textContent = this.value + 'in';
   renderPage(); checkFit();
@@ -493,6 +500,8 @@ function getStateObj() {
     orientation: document.getElementById('orientationSelect').value,
     theme: document.getElementById('themeSelect').value,
     margin: document.getElementById('marginSlider').value,
+    smartBreaks: document.getElementById('smartBreaksCheck').checked,
+    showHeader: document.getElementById('showHeaderCheck').checked,
     ruleChecked: document.getElementById('ruleCheckbox').checked,
     ruleColor: document.getElementById('ruleColor').value,
     sections: sections
@@ -516,6 +525,8 @@ function loadStateObj(data) {
   if (data.orientation) document.getElementById('orientationSelect').value = data.orientation;
   if (data.theme) document.getElementById('themeSelect').value = data.theme;
   if (data.margin) { document.getElementById('marginSlider').value = data.margin; document.getElementById('marginVal').textContent = data.margin+'in'; }
+  if (data.smartBreaks !== undefined) document.getElementById('smartBreaksCheck').checked = data.smartBreaks;
+  if (data.showHeader !== undefined) document.getElementById('showHeaderCheck').checked = data.showHeader;
   if (data.ruleChecked !== undefined) document.getElementById('ruleCheckbox').checked = data.ruleChecked;
   if (data.ruleColor) document.getElementById('ruleColor').value = data.ruleColor;
   if (data.sections) {
