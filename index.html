@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cheat Sheet Editor</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+  <h1><span>📐</span> Cheat Sheet Editor</h1>
+
+  <div class="tool-group">
+    <label>Page Settings</label>
+    <div class="slider-row">
+      <span>Pages</span>
+      <select id="pagesSelect">
+        <option value="1" selected>1 Page</option>
+        <option value="2">2 Pages</option>
+      </select>
+    </div>
+    <div class="slider-row">
+      <span>Size</span>
+      <select id="paperSizeSelect">
+        <option value="letter" selected>Letter (8.5x11)</option>
+        <option value="a4">A4 (8.27x11.69)</option>
+      </select>
+    </div>
+    <div class="slider-row">
+      <span>Layout</span>
+      <select id="orientationSelect">
+        <option value="portrait" selected>Portrait</option>
+        <option value="landscape">Landscape</option>
+      </select>
+    </div>
+    <div class="slider-row">
+      <span>Margin</span>
+      <input type="range" id="marginSlider" min="0" max="0.5" step="0.02" value="0.12">
+      <span id="marginVal">0.12in</span>
+    </div>
+    <hr style="border:0; border-top:1px solid #334155; margin:8px 0;">
+    <div class="slider-row">
+      <span>Line</span>
+      <input type="range" id="lineSlider" min="0.9" max="1.4" step="0.02" value="1.06">
+      <span id="lineVal">1.06</span>
+    </div>
+    <div class="slider-row">
+      <span>Cols</span>
+      <select id="colSelect">
+        <option value="1">1 col</option>
+        <option value="2">2 cols</option>
+        <option value="3" selected>3 cols</option>
+        <option value="4">4 cols</option>
+        <option value="5">5 cols</option>
+      </select>
+    </div>
+    <div class="slider-row">
+      <span>Gap</span>
+      <input type="range" id="gapSlider" min="1" max="15" step="0.5" value="4.5">
+      <span id="gapVal">4.5pt</span>
+    </div>
+    <div class="slider-row">
+      <span>Rule</span>
+      <input type="checkbox" id="ruleCheckbox" checked style="margin-right:auto;">
+      <input type="color" id="ruleColor" value="#bbbbbb">
+    </div>
+    <button class="primary" onclick="autoFitPage()" style="margin-top:6px;">⚡ Auto-fit to Page</button>
+  </div>
+
+  <div class="tool-group">
+    <label style="display:flex; cursor:pointer;" onclick="document.getElementById('typePanel').style.display=document.getElementById('typePanel').style.display==='none'?'block':'none'">
+      Typography <span style="margin-left:auto;">▼</span>
+    </label>
+    <div id="typePanel" style="display:none; margin-top:6px;">
+      <div class="slider-row" style="margin-bottom:10px;">
+        <span style="font-weight:bold; color:#f8fafc;">Scale</span>
+        <input type="range" id="globalScale" min="0.5" max="2.0" step="0.05" value="1.0">
+        <span id="globalScaleVal" style="color:#f8fafc;">1.0</span>
+      </div>
+      <div class="slider-row">
+        <span>Titles</span>
+        <input type="range" id="fsTitle" class="fs-slider" data-var="--fs-title" min="4" max="12" step="0.1" value="6.2">
+        <span id="fsTitleVal" class="fs-val">6.2pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Body</span>
+        <input type="range" id="fsBody" class="fs-slider" data-var="--fs-body" min="3.5" max="10" step="0.1" value="5.6">
+        <span id="fsBodyVal" class="fs-val">5.6pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Formula</span>
+        <input type="range" id="fsFormula" class="fs-slider" data-var="--fs-formula" min="3.5" max="10" step="0.1" value="5.6">
+        <span id="fsFormulaVal" class="fs-val">5.6pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Bold</span>
+        <input type="range" id="fsBold" class="fs-slider" data-var="--fs-bold" min="3.5" max="10" step="0.1" value="5.6">
+        <span id="fsBoldVal" class="fs-val">5.6pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Notes</span>
+        <input type="range" id="fsAnnot" class="fs-slider" data-var="--fs-annot" min="3" max="8" step="0.1" value="4.9">
+        <span id="fsAnnotVal" class="fs-val">4.9pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Warn</span>
+        <input type="range" id="fsWarn" class="fs-slider" data-var="--fs-warn" min="3" max="8" step="0.1" value="5.1">
+        <span id="fsWarnVal" class="fs-val">5.1pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Tips</span>
+        <input type="range" id="fsTip" class="fs-slider" data-var="--fs-tip" min="3.5" max="8" step="0.1" value="5.2">
+        <span id="fsTipVal" class="fs-val">5.2pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Table</span>
+        <input type="range" id="fsTable" class="fs-slider" data-var="--fs-table" min="3" max="8" step="0.1" value="5.3">
+        <span id="fsTableVal" class="fs-val">5.3pt</span>
+      </div>
+      <div class="slider-row">
+        <span>Const</span>
+        <input type="range" id="fsConst" class="fs-slider" data-var="--fs-const" min="3" max="8" step="0.1" value="5.3">
+        <span id="fsConstVal" class="fs-val">5.3pt</span>
+      </div>
+      <button onclick="resetTypography()" style="margin-top:6px;">↺ Reset Defaults</button>
+    </div>
+  </div>
+
+  <div class="tool-group">
+    <label>Sections</label>
+    <button class="primary" onclick="showAddSectionModal()">+ Add Section</button>
+    <button onclick="showAddImageModal()">🖼️ Add Image to Section</button>
+  </div>
+
+  <div class="tool-group">
+    <label>Section Order <span style="font-size:9px;color:#64748b;">(drag to reorder)</span></label>
+    <div id="sectionList" class="section-list"></div>
+  </div>
+
+  <div class="tool-group">
+    <label>Import / Export</label>
+    <button onclick="exportJSON()">💾 Save Project (JSON)</button>
+    <button onclick="document.getElementById('importFile').click()">📂 Load Project (JSON)</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <div class="topbar">
+    <button class="btn-pdf" onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button class="btn-fit" onclick="autoFitPage()">⚡ Auto-fit</button>
+    <button class="btn-math" onclick="reRenderMath()">🔄 Re-render Math</button>
+    <div class="info">Click any section text to edit. Use $...$ for math.</div>
+    <div id="fitIndicator" class="fit-indicator fit-ok">✓ Fits on 1 page</div>
+  </div>
+
+  <div class="preview-wrap">
+    <div id="pagesWrapper" style="display:flex; flex-direction:column; gap:20px; align-items:center;">
+      <div class="page-shadow" id="page1Shadow">
+        <div class="page" id="page">
+          <div class="hdr" id="pageHeader" contenteditable="true" style="font-size:7pt;">P123 Exam 2 — Waves → Thin Lenses &nbsp; Name: ___________</div>
+          <div class="cols" id="columnsContainer"></div>
+        </div>
+      </div>
+      
+      <div class="page-shadow" id="page2Shadow" style="display:none;">
+        <div class="page" id="page2">
+          <div class="cols" id="columnsContainer2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Add Section Modal -->
+<div id="addSectionModal" class="modal-overlay" style="display:none;">
+<div class="modal">
+  <h3>Add New Section</h3>
+  <input type="text" id="newSectionTitle" placeholder="Section title (e.g. Thin Lenses)">
+  <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:4px;">Section Color</label>
+  <select id="newSectionColor">
+    <option value="#64748b">Gray (Relativity)</option>
+    <option value="#2563eb">Blue (SHM)</option>
+    <option value="#059669">Green (Waves)</option>
+    <option value="#d97706">Orange (Sound)</option>
+    <option value="#dc2626">Red (EM)</option>
+    <option value="#7c3aed">Purple (Polarization)</option>
+    <option value="#0e7490">Teal (Optics)</option>
+    <option value="#db2777">Pink (Lenses)</option>
+    <option value="#374151">Dark (Constants)</option>
+    <option value="#b45309">Amber (Tips)</option>
+  </select>
+  <label style="font-size:10px;color:#94a3b8;display:block;margin:4px 0;">Content (HTML — use $...$ for math, &lt;b&gt; for bold, &lt;br&gt; for line break)</label>
+  <textarea id="newSectionContent" placeholder="Enter content... Use $formula$ for math."></textarea>
+  <div class="modal-btns">
+    <button style="background:#475569;color:#e2e8f0;" onclick="closeModal('addSectionModal')">Cancel</button>
+    <button style="background:#2563eb;color:#fff;" onclick="addSection()">Add Section</button>
+  </div>
+</div>
+</div>
+
+<!-- Add Image Modal -->
+<div id="addImageModal" class="modal-overlay" style="display:none;">
+<div class="modal">
+  <h3>Add Image to Section</h3>
+  <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:4px;">Select Section</label>
+  <select id="imageTargetSection"></select>
+  <label style="font-size:10px;color:#94a3b8;display:block;margin:4px 0;">Upload Image</label>
+  <input type="file" id="imageFileInput" accept="image/*">
+  <div class="slider-row" style="margin-top:6px;">
+    <span style="color:#94a3b8;font-size:10px;">Max Width</span>
+    <input type="range" id="imageWidth" min="30" max="100" value="100">
+    <span id="imageWidthVal" style="color:#94a3b8;font-size:10px;">100%</span>
+  </div>
+  <div class="modal-btns">
+    <button style="background:#475569;color:#e2e8f0;" onclick="closeModal('addImageModal')">Cancel</button>
+    <button style="background:#2563eb;color:#fff;" onclick="addImageToSection()">Add Image</button>
+  </div>
+</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
