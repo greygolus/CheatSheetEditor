@@ -324,37 +324,45 @@ function autoFitPage() {
   const p1 = document.getElementById('page');
   const p2 = document.getElementById('page2');
   
-  let lo = 0.5, hi = 2.0, bestScale = 0.5;
   p1.style.lineHeight = '1.06';
   if (p2) p2.style.lineHeight = '1.06';
   
-  for (let i = 0; i < 15; i++) {
-    const mid = (lo + hi) / 2;
-    p1.style.setProperty('--global-scale', mid);
-    if (p2) p2.style.setProperty('--global-scale', mid);
+  let scale = 0.5;
+  while (scale <= 2.0) {
+    p1.style.setProperty('--global-scale', scale);
+    if (p2) p2.style.setProperty('--global-scale', scale);
     
     const overflow = recalculatePages(true);
-    if (!overflow) { bestScale = mid; lo = mid; }
-    else { hi = mid; }
+    if (overflow) {
+      scale = Math.round((scale - 0.01) * 100) / 100; // Move back 1 step
+      break;
+    }
+    scale = Math.round((scale + 0.01) * 100) / 100;
   }
+  if (scale > 2.0) scale = 2.0;
+  if (scale < 0.5) scale = 0.5;
   
-  bestScale = Math.floor(bestScale * 100) / 100;
+  let bestScale = scale;
   p1.style.setProperty('--global-scale', bestScale);
   if (p2) p2.style.setProperty('--global-scale', bestScale);
   document.getElementById('globalScale').value = bestScale;
   document.getElementById('globalScaleVal').textContent = bestScale.toFixed(2);
   
-  lo = 1.0; hi = 1.6; let bestLine = 1.0;
-  for (let i = 0; i < 12; i++) {
-    const mid = (lo + hi) / 2;
-    p1.style.lineHeight = mid;
-    if (p2) p2.style.lineHeight = mid;
+  let line = 1.0;
+  while (line <= 1.6) {
+    p1.style.lineHeight = line;
+    if (p2) p2.style.lineHeight = line;
     const overflow = recalculatePages(true);
-    if (!overflow) { bestLine = mid; lo = mid; }
-    else { hi = mid; }
+    if (overflow) {
+      line = Math.round((line - 0.01) * 100) / 100; // Move back 1 step
+      break;
+    }
+    line = Math.round((line + 0.01) * 100) / 100;
   }
+  if (line > 1.6) line = 1.6;
+  if (line < 1.0) line = 1.0;
   
-  bestLine = Math.floor(bestLine * 100) / 100;
+  let bestLine = line;
   p1.style.lineHeight = bestLine;
   if (p2) p2.style.lineHeight = bestLine;
   document.getElementById('lineSlider').value = bestLine;
