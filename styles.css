@@ -85,6 +85,19 @@ body.light-theme .modal input, body.light-theme .modal select, body.light-theme 
   --fs-const: 5.3pt;
   font-size: calc(var(--fs-body) * var(--global-scale));
 }
+.page.landscape { width:11in; height:8.5in; }
+.page.a4 { width:8.27in; height:11.69in; }
+.page.a4.landscape { width:11.69in; height:8.27in; }
+
+.page .hdr { font-weight:bold; border-bottom:0.8pt solid #000; margin-bottom:2pt; padding-bottom:1pt; text-transform:uppercase; font-size:calc(6pt * var(--global-scale)); outline:none;}
+.page .cols {
+  column-count: var(--page-cols, 3);
+  column-gap: var(--page-gap, 10pt);
+  column-rule: var(--page-rule, none);
+  height: calc(100% - 1.2em);
+  position: relative;
+}
+
 .page h2{font-size:calc(var(--fs-title) * var(--global-scale)); font-weight:bold;margin-bottom:0.5pt;padding:0.3pt 2pt;border-radius:1pt;color:#fff;text-transform:uppercase;letter-spacing:0.3pt;}
 .page .katex { font-size: calc(var(--fs-formula) * var(--global-scale)) !important; }
 .page b, .page strong { font-size: calc(var(--fs-bold) * var(--global-scale)); }
