@@ -235,8 +235,8 @@
 
 <!-- Add Section Modal -->
 <div id="addSectionModal" class="modal-overlay" style="display:none;">
-<div class="modal">
-  <h3>Add New Section</h3>
+<div class="modal modal-large">
+  <h3 id="modalTitleText">Add New Section</h3>
   <input type="text" id="newSectionTitle" placeholder="Section title (e.g. Thin Lenses)">
   <label style="font-size:10px;color:#94a3b8;display:block;margin-bottom:4px;">Section Color</label>
   <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
@@ -290,7 +290,7 @@
 
   <div class="modal-btns">
     <button style="background:#475569;color:#e2e8f0;" onclick="closeModal('addSectionModal')">Cancel</button>
-    <button style="background:#2563eb;color:#fff;" onclick="addSection()">Add Section</button>
+    <button id="modalActionButton" style="background:#2563eb;color:#fff;" onclick="addSection()">Add Section</button>
   </div>
 </div>
 </div>

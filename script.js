@@ -40,6 +40,7 @@ function createSectionHTML(s) {
         <button onclick="moveSection(${s.id},-1)" title="Move up">▲</button>
         <button onclick="moveSection(${s.id},1)" title="Move down">▼</button>
         <button onclick="moveToOtherPage(${s.id})" title="Move to other page">⇋</button>
+        <button onclick="editSection(${s.id})" title="Edit in large window" style="color:#60a5fa;">✎</button>
         <button onclick="duplicateSection(${s.id})" title="Duplicate">⧉</button>
         <button onclick="showImageModalFor(${s.id})" title="Add image">🖼</button>
         <button onclick="deleteSection(${s.id})" title="Delete" style="color:#fca5a5;">✕</button>
@@ -183,6 +184,7 @@ function renderSectionList() {
       <div class="dot" style="background:${s.color};"></div>
       <div class="name">${s.title}</div>
       <div class="btns">
+        <button onclick="editSection(${s.id})" title="Edit" style="color:#60a5fa;">✎</button>
         <button onclick="collapseSection(${s.id})" title="Collapse/Expand">${s.collapsed ? '◧' : '◨'}</button>
         <button onclick="moveSection(${s.id},-1)">▲</button>
         <button onclick="moveSection(${s.id},1)">▼</button>
@@ -208,11 +210,43 @@ function switchModalTab(tab) {
   }
 }
 
+let editingSectionId = null;
+
+function editSection(id) {
+  const sec = sections.find(s => s.id === id);
+  if (!sec) return;
+  editingSectionId = id;
+  
+  const el = document.querySelector(`.content[data-section-id="${id}"]`);
+  if (el) sec.content = el.innerHTML;
+  
+  document.getElementById('newSectionTitle').value = sec.title;
+  document.getElementById('newSectionColor').value = sec.color;
+  document.getElementById('newSectionTemplate').value = 'none';
+  document.getElementById('newSectionRich').innerHTML = sec.content;
+  document.getElementById('newSectionContent').value = sec.content;
+  
+  const actionBtn = document.getElementById('modalActionButton');
+  const titleText = document.getElementById('modalTitleText');
+  if (actionBtn) actionBtn.textContent = 'Save Changes';
+  if (titleText) titleText.textContent = 'Edit Section';
+  
+  document.getElementById('addSectionModal').style.display = 'flex';
+  switchModalTab('wys');
+}
+
 function showAddSectionModal() {
+  editingSectionId = null;
   document.getElementById('newSectionTitle').value = '';
   document.getElementById('newSectionContent').value = '';
   document.getElementById('newSectionRich').innerHTML = '';
   document.getElementById('newSectionTemplate').value = 'none';
+  
+  const actionBtn = document.getElementById('modalActionButton');
+  const titleText = document.getElementById('modalTitleText');
+  if (actionBtn) actionBtn.textContent = 'Add Section';
+  if (titleText) titleText.textContent = 'Add New Section';
+  
   document.getElementById('addSectionModal').style.display = 'flex';
   switchModalTab('wys');
 }
@@ -239,9 +273,20 @@ function addSection() {
     content = rawContent.replace(/\n/g, '<br>').replace(/^(?!<)/, '<p>').replace(/(?<!>)$/, '</p>');
   }
   
-  sections.push({ id: sectionIdCounter++, title, color, content: content || '<p>Click to edit...</p>' });
+  if (editingSectionId !== null) {
+    const sec = sections.find(s => s.id === editingSectionId);
+    if (sec) {
+      sec.title = title;
+      sec.color = color;
+      sec.content = content || '<p>Click to edit...</p>';
+    }
+  } else {
+    sections.push({ id: sectionIdCounter++, title, color, content: content || '<p>Click to edit...</p>' });
+  }
+  
   closeModal('addSectionModal');
   renderAll();
+  saveStateToHistory();
 }
 
 function formatModal(cmd) {
