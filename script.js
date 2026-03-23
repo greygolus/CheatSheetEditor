@@ -71,7 +71,7 @@ function recalculatePages(testMode = false) {
     });
     container1.innerHTML = html;
     renderMathInEl(container1);
-    return (p1.scrollWidth > p1.clientWidth + 2 || p1.scrollHeight > p1.clientHeight + 2);
+    return (p1.scrollWidth > p1.clientWidth + 100 || p1.scrollHeight > p1.clientHeight + 2);
   } else {
     container1.innerHTML = '';
     if(container2) container2.innerHTML = '';
@@ -82,7 +82,7 @@ function recalculatePages(testMode = false) {
       if (tPage === 1) {
         container1.insertAdjacentHTML('beforeend', html);
         renderMathInEl(container1.lastElementChild);
-        if (p1.scrollWidth > p1.clientWidth + 2 || p1.scrollHeight > p1.clientHeight + 2) {
+        if (p1.scrollWidth > p1.clientWidth + 100 || p1.scrollHeight > p1.clientHeight + 2) {
           container1.lastElementChild.remove();
           tPage = 2;
           if (!testMode) s.page = 2;
@@ -95,7 +95,7 @@ function recalculatePages(testMode = false) {
         container2.insertAdjacentHTML('beforeend', html);
         if (!testMode) s.page = 2;
         renderMathInEl(container2.lastElementChild);
-        if (p2.scrollWidth > p2.clientWidth + 2 || p2.scrollHeight > p2.clientHeight + 2) {
+        if (p2.scrollWidth > p2.clientWidth + 100 || p2.scrollHeight > p2.clientHeight + 2) {
           overflowed = true;
         }
       }
@@ -379,8 +379,8 @@ function checkFit() {
   const pages = parseInt(document.getElementById('pagesSelect').value);
   const ind = document.getElementById('fitIndicator');
   
-  const o1 = (p1.scrollWidth > p1.clientWidth + 2 || p1.scrollHeight > p1.clientHeight + 2);
-  const o2 = pages === 2 && p2 && (p2.scrollWidth > p2.clientWidth + 2 || p2.scrollHeight > p2.clientHeight + 2);
+  const o1 = (p1.scrollWidth > p1.clientWidth + 100 || p1.scrollHeight > p1.clientHeight + 2);
+  const o2 = pages === 2 && p2 && (p2.scrollWidth > p2.clientWidth + 100 || p2.scrollHeight > p2.clientHeight + 2);
   
   if (o1 || o2) {
     ind.className = 'fit-indicator fit-over';
