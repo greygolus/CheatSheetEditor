@@ -616,8 +616,9 @@ setInterval(() => {
 let selectedImage = null;
 
 document.addEventListener('click', function(e) {
-  if (e.target.tagName === 'IMG' && e.target.closest('.content')) {
-    selectImage(e.target);
+  const target = e.target.closest('img, svg');
+  if (target && target.closest('.content') && !target.closest('.katex')) {
+    selectImage(target);
   } else if (!e.target.closest('#imageToolbar')) {
     deselectImage();
   }
@@ -632,7 +633,10 @@ function selectImage(img) {
   const rect = img.getBoundingClientRect();
   toolbar.style.top = (window.scrollY + rect.top - 40) + 'px';
   toolbar.style.left = (window.scrollX + Math.max(0, rect.left)) + 'px';
-  document.getElementById('floatImgWidth').value = parseInt(img.style.maxWidth || 100);
+  
+  let w = img.style.width;
+  if (!w || !w.endsWith('%')) w = img.style.maxWidth || '100%';
+  document.getElementById('floatImgWidth').value = parseInt(w);
 }
 
 function deselectImage() {
@@ -644,7 +648,11 @@ function deselectImage() {
 }
 
 document.getElementById('floatImgWidth').addEventListener('input', function() {
-  if (selectedImage) selectedImage.style.maxWidth = this.value + '%';
+  if (selectedImage) {
+    selectedImage.style.width = this.value + '%';
+    selectedImage.style.maxWidth = '100%';
+    selectedImage.style.height = 'auto'; // ensure aspect ratio
+  }
 });
 
 function alignImage(align) {
