@@ -193,21 +193,71 @@ function renderSectionList() {
 }
 
 // ===== SECTION MANAGEMENT =====
+let currentModalTab = 'wys';
+function switchModalTab(tab) {
+  currentModalTab = tab;
+  document.getElementById('tabWys').className = tab === 'wys' ? 'active' : '';
+  document.getElementById('tabHtml').className = tab === 'html' ? 'active' : '';
+  document.getElementById('wysEditor').style.display = tab === 'wys' ? 'block' : 'none';
+  document.getElementById('htmlEditor').style.display = tab === 'html' ? 'block' : 'none';
+  
+  if (tab === 'wys') {
+    document.getElementById('newSectionRich').innerHTML = document.getElementById('newSectionContent').value;
+  } else {
+    document.getElementById('newSectionContent').value = document.getElementById('newSectionRich').innerHTML;
+  }
+}
+
 function showAddSectionModal() {
   document.getElementById('newSectionTitle').value = '';
   document.getElementById('newSectionContent').value = '';
+  document.getElementById('newSectionRich').innerHTML = '';
+  document.getElementById('newSectionTemplate').value = 'none';
   document.getElementById('addSectionModal').style.display = 'flex';
+  switchModalTab('wys');
+}
+
+function clearAllSections() {
+  if (confirm("Are you sure you want to clear all sections and start a blank sheet?")) {
+    sections = [];
+    sectionIdCounter = 0;
+    renderAll();
+    saveStateToHistory();
+  }
 }
 
 function addSection() {
   const title = document.getElementById('newSectionTitle').value || 'New Section';
   const color = document.getElementById('newSectionColor').value;
-  const content = document.getElementById('newSectionContent').value
-    .replace(/\n/g, '<br>')
-    .replace(/^(?!<)/, '<p>').replace(/(?<!>)$/, '</p>');
+  
+  let rawContent = currentModalTab === 'wys' 
+    ? document.getElementById('newSectionRich').innerHTML 
+    : document.getElementById('newSectionContent').value;
+    
+  let content = rawContent;
+  if (currentModalTab === 'html') {
+    content = rawContent.replace(/\n/g, '<br>').replace(/^(?!<)/, '<p>').replace(/(?<!>)$/, '</p>');
+  }
+  
   sections.push({ id: sectionIdCounter++, title, color, content: content || '<p>Click to edit...</p>' });
   closeModal('addSectionModal');
   renderAll();
+}
+
+function formatModal(cmd) {
+  document.getElementById('newSectionRich').focus();
+  document.execCommand(cmd, false, null);
+}
+
+function insertModalTemplate(type) {
+  document.getElementById('newSectionRich').focus();
+  let html = '';
+  if (type === 'formula') html = '<div class="fb"><b>Formula Name:</b> $...$</div><br>';
+  else if (type === 'tip') html = '<div class="tip"><b>Tip:</b> ...</div><br>';
+  else if (type === 'warning') html = '<div class="w">⚠ <b>Warning:</b> ...</div><br>';
+  else if (type === 'example') html = '<div style="border:1.5pt solid #cbd5e1; padding:2pt; background:#f8fafc; margin:2pt 0; border-radius:1.5pt;"><b>Example:</b> ...</div><br>';
+  else if (type === 'table') html = '<table><tr><td>Header 1</td><td>Header 2</td></tr><tr><td>Cell 1</td><td>Cell 2</td></tr></table><br>';
+  document.execCommand('insertHTML', false, html);
 }
 
 function deleteSection(id) {
@@ -257,12 +307,17 @@ function duplicateSection(id) {
 
 function applyTemplateToModal() {
   const t = document.getElementById('newSectionTemplate').value;
-  const c = document.getElementById('newSectionContent');
-  if (t === 'none') c.value = '';
-  if (t === 'formula') c.value = '<div class="fb"><b>Formula Name:</b> $...$</div>\\n<p>Explain variables here...</p>';
-  if (t === 'procedure') c.value = '<p><b>Step 1:</b> ...</p>\\n<p><b>Step 2:</b> ...</p>';
-  if (t === 'table') c.value = '<table border="1">\\n<tr><td>Var</td><td>Val</td></tr>\\n<tr><td>...</td><td>...</td></tr>\\n</table>';
-  if (t === 'diagram') c.value = '<svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">\\n  <rect width="200" height="150" fill="#f1f5f9"/>\\n  <text x="100" y="75" text-anchor="middle" font-size="14" fill="#64748b">Diagram</text>\\n</svg>';
+  let val = '';
+  if (t === 'formula') val = '<div class="fb"><b>Formula Name:</b> $...$</div>\n<p>Explain variables here...</p>';
+  if (t === 'procedure') val = '<p><b>Step 1:</b> ...</p>\n<p><b>Step 2:</b> ...</p>';
+  if (t === 'table') val = '<table border="1">\n<tr><td>Var</td><td>Val</td></tr>\n<tr><td>...</td><td>...</td></tr>\n</table>';
+  if (t === 'diagram') val = '<svg width="200" height="150" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">\n  <rect width="200" height="150" fill="#f1f5f9"/>\n  <text x="100" y="75" text-anchor="middle" font-size="14" fill="#64748b">Diagram</text>\n</svg>';
+  
+  if (currentModalTab === 'wys') {
+    document.getElementById('newSectionRich').innerHTML = val.replace(/\n/g, '<br>');
+  } else {
+    document.getElementById('newSectionContent').value = val;
+  }
 }
 
 // ===== DRAG & DROP =====

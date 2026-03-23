@@ -172,3 +172,12 @@ body.light-theme .modal input, body.light-theme .modal select, body.light-theme 
 .modal textarea{height:120px;font-family:'Arial Narrow',sans-serif;font-size:11px;}
 .modal .modal-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:8px;}
 .modal .modal-btns button{padding:6px 14px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;}
+
+/* Modal Tabs */
+.modal-tabs { display:flex; gap:4px; margin-bottom:4px; }
+.modal-tabs button { background:#334155; border:none; color:#94a3b8; padding:5px 10px; border-radius:4px 4px 0 0; cursor:pointer; font-size:11px; }
+.modal-tabs button.active { background:#e2e8f0; color:#0f172a; font-weight:bold; }
+.modal-rich-text { background:#f8fafc; color:#0f172a; padding:8px; border:1px solid #cbd5e1; height:120px; overflow-y:auto; border-radius:0 0 4px 4px; font-size:11px; font-family:'Arial Narrow',sans-serif; }
+.mini-toolbar { display:flex; gap:4px; padding:4px; background:#e2e8f0; border:1px solid #cbd5e1; border-bottom:none; border-radius:4px 4px 0 0; }
+.mini-toolbar button { background:#fff; border:1px solid #cbd5e1; padding:2px 6px; font-size:11px; cursor:pointer; border-radius:2px; font-weight:bold; color:#0f172a; }
+.mini-toolbar button:hover { background:#f1f5f9; border-color:#94a3b8; }

@@ -160,6 +160,8 @@
     <button onclick="document.getElementById('importFile').click()">📂 Load Project (JSON)</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
     <button onclick="downloadSkill()" style="margin-top:6px; background:#0f766e; color:white; border-color:#0f766e;">🤖 Download AI Skill (Claude)</button>
+    <hr style="border:0; border-top:1px solid #334155; margin:8px 0;">
+    <button onclick="clearAllSections()" class="danger" style="margin-top:6px;">🗑️ Clear All (New Blank File)</button>
   </div>
 </div>
 
@@ -260,8 +262,32 @@
     <option value="table">Table</option>
     <option value="diagram">Diagram (Placeholder)</option>
   </select>
-  <label style="font-size:10px;color:#94a3b8;display:block;margin:4px 0;">Content (HTML — use $...$ for math, &lt;b&gt; for bold, &lt;br&gt; for line break)</label>
-  <textarea id="newSectionContent" placeholder="Enter content... Use $formula$ for math."></textarea>
+
+  <label style="font-size:10px;color:#94a3b8;display:block;margin:4px 0;">Content</label>
+  <div class="modal-tabs">
+    <button id="tabWys" class="active" onclick="switchModalTab('wys')">Visual Editor</button>
+    <button id="tabHtml" onclick="switchModalTab('html')">Raw HTML (Import)</button>
+  </div>
+  
+  <div id="wysEditor">
+    <div class="mini-toolbar">
+      <button onclick="formatModal('bold')" title="Bold"><b>B</b></button>
+      <button onclick="formatModal('italic')" title="Italic"><i>I</i></button>
+      <button onclick="formatModal('underline')" title="Underline"><u>U</u></button>
+      <span style="color:#cbd5e1;margin:0 2px;">|</span>
+      <button onclick="insertModalTemplate('formula')" title="Formula Box">∑ Box</button>
+      <button onclick="insertModalTemplate('tip')" title="Tip Box">💡 Tip</button>
+      <button onclick="insertModalTemplate('warning')" title="Warning Box">⚠️ Warn</button>
+      <button onclick="insertModalTemplate('example')" title="Example Box">📝 Ex</button>
+      <button onclick="insertModalTemplate('table')" title="2x2 Table">▦ Table</button>
+    </div>
+    <div id="newSectionRich" contenteditable="true" class="modal-rich-text"></div>
+  </div>
+  <div id="htmlEditor" style="display:none;">
+    <p style="font-size:10px; color:#cbd5e1; margin-bottom:2px;">(Use $...$ for inline math, $$...$$ for block math)</p>
+    <textarea id="newSectionContent" placeholder="Enter content or paste snippet code here..."></textarea>
+  </div>
+
   <div class="modal-btns">
     <button style="background:#475569;color:#e2e8f0;" onclick="closeModal('addSectionModal')">Cancel</button>
     <button style="background:#2563eb;color:#fff;" onclick="addSection()">Add Section</button>
