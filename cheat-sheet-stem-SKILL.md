@@ -1,11 +1,11 @@
 ---
-name: exam-cheat-sheet-v2
-description: "Use this skill whenever the user wants to create a cheat sheet, formula sheet, reference sheet, or crib sheet for an exam, test, quiz, or final. Triggers include: any mention of 'cheat sheet', 'formula sheet', 'reference sheet', 'crib sheet', 'allowed notes', 'one page of notes', 'exam prep sheet', or requests to condense course material onto one or two pages. Also trigger when the user says things like 'I can bring a sheet to my exam', 'professor allows one page', 'open note but only one sheet', 'need to fit everything on one page', or 'what should I put on my formula sheet'. Covers both printed (typed, LaTeX, Word) and handwritten sheets. Especially tuned for engineering, physics, math, and STEM courses but works for any subject. Do NOT use for full study guides, flashcards, or general note-taking that is not specifically for a single allowed reference sheet during an exam."
+name: cheat-sheet-stem
+description: "Use this skill whenever the user wants to create a cheat sheet, formula sheet, reference sheet, or crib sheet for an exam, test, quiz, or final. Triggers include: any mention of 'cheat sheet', 'formula sheet', 'reference sheet', 'crib sheet', 'allowed notes', 'one page of notes', 'exam prep sheet', or requests to condense course material onto one or two pages. Covers both printed (typed, LaTeX, Word) and handwritten sheets. Especially tuned for engineering, physics, math, computer science, and other STEM courses. Do NOT use for general non-STEM subjects unless formulas and heavy equations are involved."
 ---
 
-# Exam Cheat Sheet Creator
+# STEM Exam Cheat Sheet Creator
 
-Generate dense, well-organized, exam-ready reference sheets for engineering and STEM courses. The primary output is a **JSON project file** that the user can import into their standalone Cheat Sheet Editor web app. Also supports handwritten mode (outline for copying by hand).
+Generate dense, well-organized, diagram-rich, exam-ready reference sheets for engineering, math, physics, and STEM courses. The primary output is a **JSON project file** that the user can import into their standalone Cheat Sheet Editor web app. Also supports handwritten mode (outline for copying by hand).
 
 ## Step 1: Gather Context
 
@@ -44,19 +44,19 @@ If the user uploads course materials, process them ALL before generating the she
 - Identify emphasized topics (things the professor spent multiple lectures on)
 - Note any worked examples that match exam problem patterns
 
-## Step 3: Content Strategy
+## Step 3: Content Strategy & Visual Engineering Diagrams
 
 A cheat sheet is NOT a condensed textbook. It is a **lookup tool** for things your brain blanks on under pressure, AND a **procedure guide** for multi-step problem types.
 
 ### What belongs on the sheet (highest to lowest priority)
 
-1. **Formulas you can't derive quickly** -- with specific constants, coefficients, or non-obvious structure
-2. **"When to use" annotations** -- every formula should have a brief note explaining what type of problem it applies to. Example: "$I = P/4\\pi r^2$ — use for intensity at distance r from point source"
-3. **Sign conventions and easy-to-confuse details** -- sign errors are the #1 exam killer
-4. **Step-by-step procedures** for problem types that follow a fixed algorithm, formatted as numbered steps
-5. **Pre-computed values** -- if a calculation appears in 50%+ of problems (like $\\sin\\theta_c$ for common materials), pre-compute it
-6. **Exam-pattern tips** -- based on past exams and problem sets, flag the specific problem types most likely to appear. Integrate these into their respective topic sections (NOT as a separate section)
-7. **Simple inline diagrams** -- SVG diagrams for geometrical concepts, sign conventions, ray tracing, etc. Keep diagrams clean with proper labels (θ₁, θ₂, n₁, n₂, etc.)
+1. **Custom SVG Engineering/Math Diagrams** -- Visuals are often the best quick reference. You MUST generate custom, inline SVG diagrams for geometrical concepts, circuitry, sign conventions, free-body diagrams, ray tracing, graph shapes, interference envelopes, etc. Keep diagrams precise, colored, and properly labeled (e.g., $v$, $a$, $\\theta_1$, $\\theta_2$, $n_1$, $n_2$). 
+2. **Formulas you can't derive quickly** -- with specific constants, coefficients, or non-obvious structure
+3. **"When to use" annotations** -- every formula should have a brief note explaining what type of problem it applies to. Example: "$I = P/4\\pi r^2$ — use for intensity at distance r from point source"
+4. **Sign conventions and easy-to-confuse details** -- sign errors are the #1 exam killer
+5. **Step-by-step procedures** for problem types that follow a fixed algorithm, formatted as numbered steps
+6. **Pre-computed values** -- if a calculation appears in 50%+ of problems (like $\\sin\\theta_c$ for common materials), pre-compute it
+7. **Exam-pattern tips** -- based on past exams and problem sets, flag the specific problem types most likely to appear. Integrate these into their respective topic sections (NOT as a separate section)
 8. **Unit conversions and physical constants**
 9. **Tables over prose** -- anywhere information can be expressed as a table, do it
 
@@ -104,7 +104,7 @@ Your JSON output MUST exactly match this structure:
       "id": 0,
       "title": "Section Title 1",
       "color": "#64748b",
-      "content": "<p>HTML content here with $...$ for math.</p>"
+      "content": "<p>HTML content here with $...$ for math and <svg>...</svg> for diagrams.</p>"
     },
     {
       "id": 1,
@@ -120,28 +120,19 @@ Your JSON output MUST exactly match this structure:
 - **`header`**: A concise title for the exam.
 - **`id`**: Must be a unique integer starting from 0, incrementing for each section.
 - **`color`**: You MUST use one of these specific hex codes for section colors to match the editor's palette:
-  - `#64748b` (Gray)
-  - `#2563eb` (Blue)
-  - `#059669` (Green)
-  - `#d97706` (Orange)
-  - `#dc2626` (Red)
-  - `#7c3aed` (Purple)
-  - `#0e7490` (Teal)
-  - `#db2777` (Pink)
-  - `#374151` (Dark)
-  - `#b45309` (Amber)
+  - `#64748b` (Gray), `#2563eb` (Blue), `#059669` (Green), `#d97706` (Orange), `#dc2626` (Red), `#7c3aed` (Purple), `#0e7490` (Teal), `#db2777` (Pink), `#374151` (Dark), `#b45309` (Amber)
 - **`content`**: The actual cheat sheet text for that section.
   - MUST be valid HTML inside a JSON string.
-  - **CRITICAL JSON Escaping:** You are writing HTML and Math inside a JSON string. You MUST escape all double quotes as `\\"` and all backslashes as `\\\\` (e.g. `$\\\\gamma = 1/\\\\sqrt{1-v^2/c^2}$`).
+  - **CRITICAL JSON Escaping:** You are writing HTML, SVGs, and Math inside a JSON string. You MUST escape all double quotes as `\\"` and all backslashes as `\\\\` (e.g. `$\\\\gamma = 1/\\\\sqrt{1-v^2/c^2}$`). Make sure SVGs and KaTeX are properly constructed.
   - Wrap paragraphs in `<p>`. Use `<br>` for line breaks.
   - Wrap math equations in KaTeX delimiters: `$equation$` for both inline and display math.
+  - **CRITICAL - SVG Diagrams**: Emphasize creating brilliant engineering diagrams embedded right in the content. Build detailed inline SVG diagrams (e.g., ray tracing diagrams, spring-mass systems, RC circuits, free-body diagrams, Cartesian graphs). Keep them precise with labels. Example: `<svg width=\\"100%\\" viewBox=\\"0 0 100 50\\"><line x1=\\"10\\" y1=\\"10\\" x2=\\"90\\" y2=\\"10\\" stroke=\\"#dc2626\\" stroke-width=\\"2\\"/><circle cx=\\"50\\" cy=\\"10\\" r=\\"3\\" fill=\\"#2563eb\\"/></svg>`.
   - Use these specific HTML templates for components:
     - **Formula**: `<div class=\\"fb\\"><b>Name:</b> $formula$</div>`
     - **Warning**: `<div class=\\"w\\">⚠ <b>Warning:</b> text</div>`
     - **Tip**: `<div class=\\"tip\\">🎯 <b>Tip:</b> text</div>`
     - **Example**: `<div style=\\"border:1.5pt solid #cbd5e1; padding:2pt; background:#f8fafc; margin:2pt 0; border-radius:1.5pt;\\"><b>Example:</b> text</div>`
     - **Table**: Standard HTML table `<table>...</table>`
-    - **SVG Diagrams**: Include simple, clean inline SVG diagrams for geometry/optics if explicitly helpful. Keep them small with simple lines and labels.
 
 ### Mode B: Handwritten Sheet
 
@@ -149,7 +140,7 @@ When the sheet must be handwritten:
 
 1. **Output an outline, not a JSON file.** Hierarchical text outline the student copies onto paper.
 2. **Be more aggressive about cutting content.** Handwritten holds ~40-60% as much as printed.
-3. **Suggest a spatial layout.** Tell the student how to divide their page.
+3. **Suggest a spatial layout.** Tell the student how to divide their page. Include sketches roughly describing what diagrams they have to draw manually.
 4. **Use shorthand notation.** Replace words with symbols wherever possible.
 5. **Recommend pen colors.** Black = formulas, blue = procedures, red = warnings, green = definitions.
 
@@ -159,16 +150,10 @@ After generating the first draft JSON, prompt the user:
 
 - "Does this cover all the topics on your exam?"
 - "Anything here you know well enough to cut?"
-- "Any formulas missing that your professor emphasized?"
+- "Do the SVG diagrams look correct, or are there any specific plots/formulas you want illustrated further?"
 - "Try importing this JSON file into the Cheat Sheet Editor. Does it fit on the page when you click Auto-fit?"
 
-Then revise. Cheat sheets almost always need 2-3 rounds of editing. The interactive editor makes iteration fast -- the user can annotate a PDF export and send it back, or just describe changes in chat.
-
-When the user sends back annotated feedback:
-- Apply all annotations precisely
-- If they say "add more content" or "fill the page," expand explanations, add more pre-computed values, add more diagrams, and increase "when to use" annotations
-- If they say "move X into Y section," restructure accordingly
-- Generate a new updated JSON code block for them to re-import
+Then revise in light of custom iterations. Ensure all JSON structure boundaries remain 100% compliant during updates.
 
 ## Engineering-Specific Content Libraries
 
@@ -202,6 +187,6 @@ When generating any cheat sheet, weave in these contextually (NOT as a standalon
 - **⚠ Warning callouts** for classic sign errors, forgotten factors of 2, or "everyone gets this wrong" situations -- use the `<div class="w">` template.
 - **🎯 Exam pattern callouts** for high-probability problem types based on past exam and problem set analysis -- use the `<div class="tip">` template.
 - **"When to use"** annotations in italic gray text (or just regular text) after each formula or procedure.
-- **Pre-computed values** for calculations that appear repeatedly (trig of common angles, combined constants like $\mu_0 c$, etc.)
+- **Pre-computed values** for calculations that appear repeatedly (trig of common angles, combined constants like $\\mu_0 c$, etc.)
 - **Variable definitions** next to every formula where variables aren't obvious
 - **Units** on constants and in formulas where dimensional analysis helps
