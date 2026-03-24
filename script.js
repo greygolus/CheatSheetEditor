@@ -436,6 +436,34 @@ function insertTemplate(type) {
 }
 
 // ===== AUTO-FIT =====
+function superAutoFit() {
+  if (confirm("Super Auto-fit will turn off Smart Breaks and Headers, and maximize all images and charts to 100% width to squeeze everything in. Continue?")) {
+    flushDOMToState();
+    document.getElementById('smartBreaksCheck').checked = false;
+    document.getElementById('showHeaderCheck').checked = false;
+    
+    sections.forEach(s => {
+      const div = document.createElement('div');
+      div.innerHTML = s.content;
+      div.querySelectorAll('img').forEach(img => {
+        img.style.width = '100%';
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+      });
+      div.querySelectorAll('svg').forEach(svg => {
+        svg.style.width = '100%';
+        svg.style.height = 'auto';
+      });
+      s.content = div.innerHTML;
+    });
+    
+    renderAll();
+    setTimeout(() => {
+      autoFitPage();
+    }, 100);
+  }
+}
+
 function autoFitPage() {
   const p1 = document.getElementById('page');
   const p2 = document.getElementById('page2');
