@@ -17,38 +17,39 @@
   <h1><span>📐</span> Cheat Sheet Editor</h1>
 
   <div class="tool-group">
-    <label>Page Settings</label>
+  <div class="tool-group">
+    <label title="Configure the global physical layout of the sheet">Page Settings <span style="font-size:9px;color:#64748b;">(?)</span></label>
     <div class="slider-row">
-      <span>Pages</span>
+      <span title="Set total number of allowed pages">Pages</span>
       <select id="pagesSelect">
         <option value="1" selected>1 Page</option>
         <option value="2">2 Pages</option>
       </select>
     </div>
     <div class="slider-row">
-      <span>Size</span>
+      <span title="Set standard paper size">Size</span>
       <select id="paperSizeSelect">
         <option value="letter" selected>Letter (8.5x11)</option>
         <option value="a4">A4 (8.27x11.69)</option>
       </select>
     </div>
     <div class="slider-row">
-      <span>Layout</span>
+      <span title="Set paper orientation">Layout</span>
       <select id="orientationSelect">
         <option value="portrait" selected>Portrait</option>
         <option value="landscape">Landscape</option>
       </select>
     </div>
     <div class="slider-row">
-      <span>Theme</span>
+      <span title="Color theme applied to the document print">Theme</span>
       <select id="themeSelect">
         <option value="color" selected>Color</option>
         <option value="bw">B&W (Ink Saver)</option>
       </select>
     </div>
     <div class="slider-row" style="justify-content:space-between; padding:0 4px;">
-      <label style="font-size:11px;color:#cbd5e1;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="smartBreaksCheck" checked> Smart Breaks</label>
-      <label style="font-size:11px;color:#cbd5e1;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="showHeaderCheck" checked> Header</label>
+      <label style="font-size:11px;color:#cbd5e1;display:flex;align-items:center;gap:4px;cursor:pointer;" title="Prevent sections and formulas from splitting awkwardly across columns"><input type="checkbox" id="smartBreaksCheck" checked> Smart Breaks</label>
+      <label style="font-size:11px;color:#cbd5e1;display:flex;align-items:center;gap:4px;cursor:pointer;" title="Show or hide the Name/Class header at the top of the page"><input type="checkbox" id="showHeaderCheck" checked> Header</label>
     </div>
     <div class="slider-row">
       <span>Margin</span>
@@ -159,7 +160,6 @@
     <button onclick="exportJSON()">💾 Save Project (JSON)</button>
     <button onclick="document.getElementById('importFile').click()">📂 Load Project (JSON)</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
-    <button onclick="downloadSkill()" style="margin-top:6px; background:#0f766e; color:white; border-color:#0f766e;">🤖 Download AI Skill (Claude)</button>
     <hr style="border:0; border-top:1px solid #334155; margin:8px 0;">
     <button onclick="clearAllSections()" class="danger" style="margin-top:6px;">🗑️ Clear All (New Blank File)</button>
   </div>
@@ -171,9 +171,12 @@
     <button onclick="document.body.classList.toggle('light-theme')" title="Toggle UI Theme" style="background:transparent;border:1px solid #475569;padding:4px 6px;">🌓</button>
     <div style="display:flex;align-items:center;gap:4px;">
       <span style="font-size:10px;color:#94a3b8;">Zoom</span>
-      <input type="range" id="zoomSlider" min="0.5" max="2" step="0.1" value="1.0" style="width:60px;accent-color:#94a3b8;">
+      <input type="range" id="zoomSlider" min="0.5" max="2" step="0.1" value="1.0" style="width:60px;accent-color:#94a3b8;" title="Zoom the view (does not affect print size)">
       <span id="zoomVal" style="font-size:10px;color:#94a3b8;min-width:28px;">100%</span>
     </div>
+    <span style="color:#475569; margin:0 4px;">|</span>
+    <button onclick="undo()" title="Undo (Ctrl+Z)" style="background:transparent; color:#94a3b8; padding:4px 8px; border:none; border-radius:4px; cursor:pointer; font-size:16px;">↶</button>
+    <button onclick="redo()" title="Redo (Ctrl+Y)" style="background:transparent; color:#94a3b8; padding:4px 8px; border:none; border-radius:4px; cursor:pointer; font-size:16px;">↷</button>
     <span style="color:#475569; margin:0 4px;">|</span>
     <!-- Formatting Tools -->
     <div class="format-group">
@@ -195,14 +198,28 @@
     <div style="flex-grow:1"></div>
     <button onclick="toggleDrawMode()" title="Toggle Draw Mode (Pre-print)" style="background:#475569;color:#fff;border-radius:4px;padding:5px 10px;border:none;cursor:pointer;margin-right:8px;">🖍️ Draw</button>
 
+    <button onclick="superAutoFit()" class="btn-fit" style="background:#0f766e;" title="Turn off headers & breaks, maximize images, then Auto-fit">🚀 Super-fit</button>
+    <button class="btn-fit" onclick="autoFitPage()" title="Automatically shrink text to fit the page">⚡ Auto-fit</button>
+    <button class="btn-math" onclick="reRenderMath()" title="Re-render Math">🔄 Math</button>
+    <div id="fitIndicator" class="fit-indicator fit-ok" style="margin-left:0;">✓ Fits on 1 page</div>
+    
+    <span style="color:#475569; margin:0 4px;">|</span>
     <button class="btn-pdf" onclick="window.print()" title="Print">🖨️ Print</button>
     <button class="btn-pdf" onclick="window.print()" title="Save as PDF (via Print Dialog)" style="background:#0284c7;">📄 Save PDF</button>
-    <button class="btn-fit" onclick="autoFitPage()">⚡ Auto-fit</button>
-    <button class="btn-math" onclick="reRenderMath()">🔄 Math</button>
-    <div id="fitIndicator" class="fit-indicator fit-ok" style="margin-left:0;">✓ Fits on 1 page</div>
+    <span style="color:#475569; margin:0 4px;">|</span>
+    <button onclick="showWelcomeModal()" style="background:#475569; color:#fff; border:none; padding:5px 10px; border-radius:4px; font-weight:bold; cursor:pointer;" title="Help & Info">❓ Help</button>
   </div>
 
-  <div class="preview-wrap">
+  <div class="preview-wrap" style="position:relative;">
+    <!-- EMPTY STATE -->
+    <div id="emptyState" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; color:#94a3b8; z-index:10;">
+      <h2 style="font-size:24px; color:#e2e8f0; margin-bottom:8px;">Your Cheat Sheet is Empty</h2>
+      <p style="margin-bottom:16px; font-size:14px;">Start from scratch, or load an AI-generated project.</p>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button onclick="showAddSectionModal()" style="padding:10px 16px; border-radius:6px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:bold; transition:0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">+ Add Section</button>
+        <button onclick="document.getElementById('importFile').click()" style="padding:10px 16px; border-radius:6px; border:1px solid #475569; background:#1e293b; color:#e2e8f0; cursor:pointer; font-weight:bold; transition:0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">📂 Load Project</button>
+      </div>
+    </div>
     <div id="pagesWrapper" style="display:flex; flex-direction:column; gap:20px; align-items:center;">
       <div class="page-shadow" id="page1Shadow" style="position:relative;">
         <div class="page" id="page">
@@ -327,6 +344,42 @@
   <button onclick="deleteImage()" title="Delete Image" style="color:#fca5a5;">✕</button>
 </div>
 
-<script src="script.js"></script>
+<!-- Welcome / Onboarding Modal -->
+<div id="welcomeModal" class="modal-overlay" style="display:none; z-index:2000;">
+  <div class="modal" style="width:500px; max-width:95vw; text-align:center; padding:30px;">
+    <h2 style="font-size:22px; color:#fff; margin-bottom:12px;">Welcome to Cheat Sheet Editor</h2>
+    <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px; line-height:1.5;">
+      The ultimate tool for squeezing your course material onto a single page.<br>
+      Use the built-in layout engine, or generate content effortlessly with AI.
+    </p>
+    
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+      <button onclick="closeModal('welcomeModal'); clearAllSections();" style="padding:16px; background:#1e293b; border:1px solid #475569; border-radius:8px; cursor:pointer; color:#f8fafc; font-weight:bold; font-size:14px; transition:0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
+        <span style="display:block; font-size:24px; margin-bottom:6px;">📄</span>
+        Start Blank Sheet
+      </button>
+      <button onclick="closeModal('welcomeModal'); initSections();" style="padding:16px; background:#1e293b; border:1px solid #475569; border-radius:8px; cursor:pointer; color:#f8fafc; font-weight:bold; font-size:14px; transition:0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
+        <span style="display:block; font-size:24px; margin-bottom:6px;">🏫</span>
+        Load Physics Demo
+      </button>
+      <button onclick="document.getElementById('importFile').click(); closeModal('welcomeModal');" style="padding:16px; background:#1e293b; border:1px solid #475569; border-radius:8px; cursor:pointer; color:#f8fafc; font-weight:bold; font-size:14px; transition:0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
+        <span style="display:block; font-size:24px; margin-bottom:6px;">📂</span>
+        Import JSON Project
+      </button>
+      <button onclick="downloadSkill(); closeModal('welcomeModal');" style="padding:16px; background:#115e59; border:1px solid #0f766e; border-radius:8px; cursor:pointer; color:#fff; font-weight:bold; font-size:14px; transition:0.2s;" onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#115e59'">
+        <span style="display:block; font-size:24px; margin-bottom:6px;">🤖</span>
+        Download AI Skill
+      </button>
+    </div>
+    
+    <p style="font-size:12px; color:#94a3b8; text-align:left; background:#0f172a; padding:12px; border-radius:6px; border:1px solid #334155;">
+      <b>💡 Pro Tip (Claude Users):</b> Download the <b>AI Skill</b> prompt file above. You can provide this to Claude alongside your course syllabus and past exams to perfectly format your material for this generator!
+    </p>
+    
+    <button onclick="closeModal('welcomeModal')" style="margin-top:20px; background:transparent; border:none; color:#94a3b8; cursor:pointer; text-decoration:underline;">Close (Esc)</button>
+  </div>
+</div>
+
+<script defer src="script.js"></script>
 </body>
 </html>
